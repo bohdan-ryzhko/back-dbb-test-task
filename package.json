@@ -1,0 +1,27 @@
+{
+  "name": "back-dbb-test-task",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bohdan-ryzhko/back-dbb-test-task.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bohdan-ryzhko/back-dbb-test-task/issues"
+  },
+  "homepage": "https://github.com/bohdan-ryzhko/back-dbb-test-task#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "nodemon": "^2.0.22",
+    "uuidv4": "^6.2.13"
+  }
+}
