@@ -7,12 +7,13 @@ const { client_id, client_secret, redirect_uri } = require("../utils/dropboxHelp
 const { getAuthorizeUrl } = require("../utils/getAuthorizeUrl");
 const { handleSuccessRequest } = require("../utils/handleSuccessRequest");
 const { handleErrorRequest } = require("../utils/handleErrorRequest");
+const { REDIRECT, AUTHORIZE } = require("../constants/paths");
 
 const uniqueId = uuidv4();
 
 const router = express.Router();
 
-router.get("/redirect", (req, res) => {
+router.get(REDIRECT, (req, res) => {
 	const params = queryString.stringify({
 		client_id,
 		response_type: "code",
@@ -23,7 +24,7 @@ router.get("/redirect", (req, res) => {
 	res.redirect(getAuthorizeUrl(params));
 });
 
-router.get("/authorize", (req, res) => {
+router.get(AUTHORIZE, (req, res) => {
 	if (req.query.error) return res.end(req.query.error_description);
 
 	if (req.query.state !== uniqueId) return res.end("Wrong uniqueId");
