@@ -9,7 +9,7 @@ const { client_id, client_secret, redirect_uri } = require("../utils/dropboxHelp
 const { getAuthorizeUrl } = require("../utils/getAuthorizeUrl");
 const { handleSuccessRequest } = require("../utils/handleSuccessRequest");
 const { handleErrorRequest } = require("../utils/handleErrorRequest");
-const { REDIRECT, AUTHORIZE } = require("../constants/paths");
+const { REDIRECT, AUTHORIZE, AUTH_PATH } = require("../constants/paths");
 
 const uniqueId = uuidv4();
 
@@ -58,7 +58,7 @@ router.get(AUTHORIZE, (req, res) => {
 	request.end();
 });
 
-router.get("/auth", async (req, res) => {
+router.get(AUTH_PATH, async (req, res) => {
 	try {
 		const authInfo = await fs.readFile(authPath, "utf-8");
 		if (authInfo) {
