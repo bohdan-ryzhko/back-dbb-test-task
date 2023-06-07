@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const { router } = require("./routes/routes");
 const { ROOT, PORT } = require("./constants/paths");
-// http://localhost:3001/api/redirect
+
 const app = express();
 
 app.use(cors());

@@ -2,12 +2,12 @@ const ROOT = "/api";
 const PORT = 3001;
 const REDIRECT = "/redirect";
 const AUTHORIZE = "/authorize";
-const AUTH_PATH = "/auth";
+const FOLDERS = "/folders";
 
 module.exports = {
 	ROOT,
 	PORT,
 	REDIRECT,
 	AUTHORIZE,
-	AUTH_PATH
+	FOLDERS
 }

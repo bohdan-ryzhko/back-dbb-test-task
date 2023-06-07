@@ -9,13 +9,13 @@ const { client_id, client_secret, redirect_uri } = require("../utils/dropboxHelp
 const { getAuthorizeUrl } = require("../utils/getAuthorizeUrl");
 const { handleSuccessRequest } = require("../utils/handleSuccessRequest");
 const { handleErrorRequest } = require("../utils/handleErrorRequest");
-const { REDIRECT, AUTHORIZE, AUTH_PATH } = require("../constants/paths");
+const { REDIRECT, AUTHORIZE, FOLDERS } = require("../constants/paths");
 
 const uniqueId = uuidv4();
 
 const router = express.Router();
 
-const authPath = path.join(process.cwd(), "src", "auth", "auth.json");
+const userFolders = path.join(process.cwd(), "src", "auth", "user-folders.json");
 
 router.get(REDIRECT, (req, res) => {
 	const params = queryString.stringify({
@@ -58,13 +58,12 @@ router.get(AUTHORIZE, (req, res) => {
 	request.end();
 });
 
-router.get(AUTH_PATH, async (req, res) => {
+router.get(FOLDERS, async (req, res) => {
 	try {
-		const authInfo = await fs.readFile(authPath, "utf-8");
-		if (authInfo) {
-			const parsedAuthInfo = JSON.parse(authInfo);
+		const folders = await fs.readFile(userFolders, "utf-8");
+		if (folders) {
+			const parsedAuthInfo = JSON.parse(folders);
 			res.status(200).json(parsedAuthInfo);
-			await fs.writeFile(authPath, JSON.stringify({}, null, 2));
 		} else {
 			res.status(404).json({ error: "Error" });
 		}
