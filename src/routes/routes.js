@@ -2,6 +2,8 @@ const express = require("express");
 const queryString = require("querystring");
 const https = require("https");
 const { v4: uuidv4 } = require("uuid");
+const fs = require("fs").promises;
+const path = require("path");
 
 const { client_id, client_secret, redirect_uri } = require("../utils/dropboxHelper");
 const { getAuthorizeUrl } = require("../utils/getAuthorizeUrl");
@@ -12,6 +14,8 @@ const { REDIRECT, AUTHORIZE } = require("../constants/paths");
 const uniqueId = uuidv4();
 
 const router = express.Router();
+
+const authPath = path.join(process.cwd(), "src", "auth", "auth.json");
 
 router.get(REDIRECT, (req, res) => {
 	const params = queryString.stringify({
@@ -52,6 +56,21 @@ router.get(AUTHORIZE, (req, res) => {
 
 	request.write(params);
 	request.end();
+});
+
+router.get("/auth", async (req, res) => {
+	try {
+		const authInfo = await fs.readFile(authPath, "utf-8");
+		if (authInfo) {
+			const parsedAuthInfo = JSON.parse(authInfo);
+			res.status(200).json(parsedAuthInfo);
+			await fs.writeFile(authPath, JSON.stringify({}, null, 2));
+		} else {
+			res.status(404).json({ error: "Error" });
+		}
+	} catch (error) {
+		res.status(500).json({ error: "Internal Server Error" });
+	}
 });
 
 module.exports = { router };
