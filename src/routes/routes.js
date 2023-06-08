@@ -1,4 +1,5 @@
 const express = require("express");
+const { MongoClient } = require("mongodb");
 const queryString = require("querystring");
 const https = require("https");
 const { v4: uuidv4 } = require("uuid");
@@ -10,12 +11,11 @@ const { getAuthorizeUrl } = require("../utils/getAuthorizeUrl");
 const { handleSuccessRequest } = require("../utils/handleSuccessRequest");
 const { handleErrorRequest } = require("../utils/handleErrorRequest");
 const { REDIRECT, AUTHORIZE, FOLDERS } = require("../constants/paths");
+const { DB_URL, USER_FOLDERS } = require("../utils/connectionsDB");
 
 const uniqueId = uuidv4();
 
 const router = express.Router();
-
-const userFolders = path.join(process.cwd(), "src", "auth", "user-folders.json");
 
 router.get(REDIRECT, (req, res) => {
 	const params = queryString.stringify({
@@ -30,8 +30,6 @@ router.get(REDIRECT, (req, res) => {
 
 router.get(AUTHORIZE, (req, res) => {
 	if (req.query.error) return res.end(req.query.error_description);
-
-	if (req.query.state !== uniqueId) return res.end("Wrong uniqueId");
 
 	const params = queryString.stringify({
 		code: req.query.code,
@@ -59,16 +57,31 @@ router.get(AUTHORIZE, (req, res) => {
 });
 
 router.get(FOLDERS, async (req, res) => {
+	const { email } = req.query;
+
+	if (!email) {
+		return res.status(400).json({ error: "Email parameter is missing" });
+	}
+
 	try {
-		const folders = await fs.readFile(userFolders, "utf-8");
-		if (folders) {
-			const parsedAuthInfo = JSON.parse(folders);
-			res.status(200).json(parsedAuthInfo);
-		} else {
-			res.status(404).json({ error: "Error" });
+		const client = new MongoClient(DB_URL, { useUnifiedTopology: true });
+		await client.connect();
+
+		const db = client.db();
+		const collection = db.collection(USER_FOLDERS);
+
+		const user = await collection.findOne({ email });
+
+		await client.close();
+
+		if (!user) {
+			return res.status(404).json({ error: "User not found" });
 		}
+
+		return res.json(user);
 	} catch (error) {
-		res.status(500).json({ error: "Internal Server Error" });
+		console.error("Error connecting to database:", error);
+		return res.status(500).json({ error: "Internal server error" });
 	}
 });
 

@@ -1,13 +1,10 @@
-const fs = require("fs").promises;
-const path = require("path");
+const { MongoClient } = require("mongodb");
+
+const { DB_URL, USER_FOLDERS } = require("./connectionsDB");
 
 const { getRedirectUrl } = require("./getRedirectUrl");
-const { checkFileAccess } = require("./checkFileAccess");
 const { getUserInfo } = require("./getUserInfo");
-
-const authPath = path.join(process.cwd(), "src", "auth");
-const filePath = path.join(authPath, "user-folders.json");
-
+const { getUser } = require("./getUser");
 
 const handleSuccessRequest = res => response => {
 	const chunks = [];
@@ -17,22 +14,33 @@ const handleSuccessRequest = res => response => {
 	});
 
 	response.on("end", async () => {
-		const isAuthDirExists = await checkFileAccess(authPath);
+		const { access_token, account_id } = JSON.parse(Buffer.concat(chunks).toString());
+		const user = await getUser(access_token, account_id);
+		const userInfo = await getUserInfo(access_token);
 
-		if (!isAuthDirExists) {
-			try {
-				await fs.mkdir(authPath, { recursive: true });
-			} catch (error) {
-				console.error("Error creating the auth directory:", error);
-				return;
+		const client = new MongoClient(DB_URL, { useUnifiedTopology: true });
+
+		try {
+			await client.connect();
+
+			const db = client.db();
+			const collection = db.collection(USER_FOLDERS);
+
+			const existingUser = await collection.findOne({ email: user.email });
+			if (existingUser) {
+				await client.close();
+				return res.redirect(getRedirectUrl(`access=true&email=${user.email}&name=${user.name.surname}`));
 			}
+
+			await collection.insertOne({ ...userInfo, ...user });
+
+			await client.close();
+		} catch (error) {
+			console.error("Error connecting to database:", error);
 		}
 
-		const responseData = await JSON.parse(Buffer.concat(chunks).toString());
-		const response = await getUserInfo(responseData.access_token);
-		await fs.writeFile(filePath, JSON.stringify(response, null, 2));
-		res.redirect(getRedirectUrl("access=true"));
+		res.redirect(getRedirectUrl(`access=true&email=${user.email}&name=${user.name.surname}`));
 	});
-}
+};
 
 module.exports = { handleSuccessRequest };
