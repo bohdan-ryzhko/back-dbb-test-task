@@ -85,4 +85,29 @@ router.get(FOLDERS, async (req, res) => {
 	}
 });
 
+router.delete("/folders/:email", async (req, res) => {
+	const { email } = req.params;
+
+	try {
+		const client = new MongoClient(DB_URL, { useUnifiedTopology: true });
+		await client.connect();
+
+		const db = client.db();
+		const collection = db.collection(USER_FOLDERS);
+
+		const result = await collection.deleteOne({ email });
+
+		await client.close();
+
+		if (result.deletedCount === 0) {
+			return res.status(404).json({ error: "User not found" });
+		}
+
+		return res.json({ message: "User deleted successfully" });
+	} catch (error) {
+		console.error("Error connecting to database:", error);
+		return res.status(500).json({ error: "Internal server error" });
+	}
+});
+
 module.exports = { router };
