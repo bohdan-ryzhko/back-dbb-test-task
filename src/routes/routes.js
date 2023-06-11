@@ -3,15 +3,15 @@ const { MongoClient } = require("mongodb");
 const queryString = require("querystring");
 const https = require("https");
 const { v4: uuidv4 } = require("uuid");
-const fs = require("fs").promises;
-const path = require("path");
 
-const { client_id, client_secret, redirect_uri } = require("../utils/dropboxHelper");
+const { client_id, redirect_uri, redirect_uri_create_folder } = require("../utils/dropboxHelper");
 const { getAuthorizeUrl } = require("../utils/getAuthorizeUrl");
-const { handleSuccessRequest } = require("../utils/handleSuccessRequest");
-const { handleErrorRequest } = require("../utils/handleErrorRequest");
-const { REDIRECT, AUTHORIZE, FOLDERS } = require("../constants/paths");
+const { getTokenParams } = require("../utils/getTokenParams");
+const { handleSuccessAthorization } = require("../handlers/handleSuccessAthorization");
+const { handleError } = require("../handlers/handleError");
+const { REDIRECT, AUTHORIZE, FOLDERS, DELETE_USER, CREATE_FOLDER, REDIRECT_CREATE } = require("../constants/paths");
 const { DB_URL, USER_FOLDERS } = require("../utils/connectionsDB");
+const { handleSucessCreateFolder } = require("../handlers/handleSucessCreateFolder");
 
 const uniqueId = uuidv4();
 
@@ -31,26 +31,11 @@ router.get(REDIRECT, (req, res) => {
 router.get(AUTHORIZE, (req, res) => {
 	if (req.query.error) return res.end(req.query.error_description);
 
-	const params = queryString.stringify({
-		code: req.query.code,
-		grant_type: "authorization_code",
-		redirect_uri,
-		client_id,
-		client_secret,
-	});
+	const { params, options } = getTokenParams(req, redirect_uri);
 
-	const options = {
-		hostname: "api.dropbox.com",
-		path: "/oauth2/token",
-		method: "POST",
-		headers: {
-			"Content-Type": "application/x-www-form-urlencoded",
-		},
-	};
+	const request = https.request(options, handleSuccessAthorization(res));
 
-	const request = https.request(options, handleSuccessRequest(res));
-
-	request.on("error", handleErrorRequest(res));
+	request.on("error", handleError(res));
 
 	request.write(params);
 	request.end();
@@ -85,7 +70,7 @@ router.get(FOLDERS, async (req, res) => {
 	}
 });
 
-router.delete("/folders/:email", async (req, res) => {
+router.delete(DELETE_USER, async (req, res) => {
 	const { email } = req.params;
 
 	try {
@@ -108,6 +93,34 @@ router.delete("/folders/:email", async (req, res) => {
 		console.error("Error connecting to database:", error);
 		return res.status(500).json({ error: "Internal server error" });
 	}
+});
+
+router.get("/redirect-create", (req, res) => {
+	const { inputValue, email } = req.query;
+
+	const params = queryString.stringify({
+		client_id,
+		response_type: "code",
+		redirect_uri: redirect_uri_create_folder,
+		state: `${inputValue}|${email}`,
+	});
+
+	res.redirect(getAuthorizeUrl(params));
+});
+
+router.get("/folders-create", (req, res) => {
+	if (req.query.error) return res.end(req.query.error_description);
+
+	const [path, email] = req.query.state.split("|");
+
+	const { params, options } = getTokenParams(req, redirect_uri_create_folder);
+
+	const request = https.request(options, handleSucessCreateFolder({ res, path, email }));
+
+	request.on("error", handleError(res));
+
+	request.write(params);
+	request.end();
 });
 
 module.exports = { router };

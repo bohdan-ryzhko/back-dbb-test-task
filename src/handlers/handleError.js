@@ -1,6 +1,6 @@
-const handleErrorRequest = res => error => {
+const handleError = res => error => {
 	console.error("Request error:", error);
 	res.status(500).end("Internal Server Error");
 }
 
-module.exports = { handleErrorRequest };
+module.exports = { handleError };

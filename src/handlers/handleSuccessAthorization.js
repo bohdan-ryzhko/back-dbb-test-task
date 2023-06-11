@@ -1,12 +1,13 @@
 const { MongoClient } = require("mongodb");
 
-const { DB_URL, USER_FOLDERS } = require("./connectionsDB");
+const { DB_URL, USER_FOLDERS } = require("../utils/connectionsDB");
 
-const { getRedirectUrl } = require("./getRedirectUrl");
-const { getUserInfo } = require("./getUserInfo");
-const { getUser } = require("./getUser");
+const { getRedirectUrl } = require("../utils/getRedirectUrl");
+const { getUserInfo } = require("../requests/getUserInfo");
+const { getUser } = require("../requests/getUser");
+const { getParseChunks } = require("../utils/getParseChunks");
 
-const handleSuccessRequest = res => response => {
+const handleSuccessAthorization = res => response => {
 	const chunks = [];
 
 	response.on("data", (chunk) => {
@@ -14,7 +15,7 @@ const handleSuccessRequest = res => response => {
 	});
 
 	response.on("end", async () => {
-		const { access_token, account_id } = JSON.parse(Buffer.concat(chunks).toString());
+		const { access_token, account_id } = getParseChunks(chunks);
 		const user = await getUser(access_token, account_id);
 		const userInfo = await getUserInfo(access_token);
 
@@ -27,6 +28,7 @@ const handleSuccessRequest = res => response => {
 			const collection = db.collection(USER_FOLDERS);
 
 			const existingUser = await collection.findOne({ email: user.email });
+
 			if (existingUser) {
 				await client.close();
 				return res.redirect(getRedirectUrl(`access=true&email=${user.email}&name=${user.name.surname}`));
@@ -37,10 +39,11 @@ const handleSuccessRequest = res => response => {
 			await client.close();
 		} catch (error) {
 			console.error("Error connecting to database:", error);
+			res.status(400).json("Bad request");
 		}
 
 		res.redirect(getRedirectUrl(`access=true&email=${user.email}&name=${user.name.surname}`));
 	});
 };
 
-module.exports = { handleSuccessRequest };
+module.exports = { handleSuccessAthorization };
