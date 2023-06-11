@@ -2,7 +2,6 @@ const express = require("express");
 const { MongoClient } = require("mongodb");
 const queryString = require("querystring");
 const https = require("https");
-const { v4: uuidv4 } = require("uuid");
 
 const {
 	REDIRECT,
@@ -21,8 +20,6 @@ const { handleError } = require("../handlers/handleError");
 const { DB_URL, USER_FOLDERS } = require("../utils/connectionsDB");
 const { handleSucessCreateFolder } = require("../handlers/handleSucessCreateFolder");
 
-const uniqueId = uuidv4();
-
 const router = express.Router();
 
 router.get(REDIRECT, (req, res) => {
@@ -30,7 +27,6 @@ router.get(REDIRECT, (req, res) => {
 		client_id,
 		response_type: "code",
 		redirect_uri,
-		state: uniqueId,
 	});
 
 	res.redirect(getAuthorizeUrl(params));
