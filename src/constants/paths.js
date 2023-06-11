@@ -4,6 +4,8 @@ const REDIRECT = "/redirect";
 const AUTHORIZE = "/authorize";
 const FOLDERS = "/folders";
 const DELETE_USER = "/folders/:email";
+const REDIRECT_CREATE = "/redirect-create";
+const CREATE_FOLDER = "/folders-create";
 
 module.exports = {
 	ROOT,
@@ -12,4 +14,6 @@ module.exports = {
 	AUTHORIZE,
 	FOLDERS,
 	DELETE_USER,
+	REDIRECT_CREATE,
+	CREATE_FOLDER
 }

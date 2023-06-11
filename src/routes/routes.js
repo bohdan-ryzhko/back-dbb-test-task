@@ -4,12 +4,20 @@ const queryString = require("querystring");
 const https = require("https");
 const { v4: uuidv4 } = require("uuid");
 
+const {
+	REDIRECT,
+	AUTHORIZE,
+	FOLDERS,
+	DELETE_USER,
+	REDIRECT_CREATE,
+	CREATE_FOLDER
+} = require("../constants/paths");
+
 const { client_id, redirect_uri, redirect_uri_create_folder } = require("../utils/dropboxHelper");
 const { getAuthorizeUrl } = require("../utils/getAuthorizeUrl");
 const { getTokenParams } = require("../utils/getTokenParams");
 const { handleSuccessAthorization } = require("../handlers/handleSuccessAthorization");
 const { handleError } = require("../handlers/handleError");
-const { REDIRECT, AUTHORIZE, FOLDERS, DELETE_USER, CREATE_FOLDER, REDIRECT_CREATE } = require("../constants/paths");
 const { DB_URL, USER_FOLDERS } = require("../utils/connectionsDB");
 const { handleSucessCreateFolder } = require("../handlers/handleSucessCreateFolder");
 
@@ -95,7 +103,7 @@ router.delete(DELETE_USER, async (req, res) => {
 	}
 });
 
-router.get("/redirect-create", (req, res) => {
+router.get(REDIRECT_CREATE, (req, res) => {
 	const { inputValue, email } = req.query;
 
 	const params = queryString.stringify({
@@ -108,7 +116,7 @@ router.get("/redirect-create", (req, res) => {
 	res.redirect(getAuthorizeUrl(params));
 });
 
-router.get("/folders-create", (req, res) => {
+router.get(CREATE_FOLDER, (req, res) => {
 	if (req.query.error) return res.end(req.query.error_description);
 
 	const [path, email] = req.query.state.split("|");
